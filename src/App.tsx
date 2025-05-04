@@ -12,8 +12,10 @@ import AuthPage from "./pages/AuthPage";
 import DashboardPage from "./pages/DashboardPage";
 import ProductsPage from "./pages/ProductsPage";
 import ShopsPage from "./pages/ShopsPage";
+import ShopProductsPage from "./pages/ShopProductsPage";
 import ProductDetailPage from "./pages/ProductDetailPage";
 import AlertsPage from "./pages/AlertsPage";
+import ScrapePage from "./pages/ScrapePage";
 
 const queryClient = new QueryClient();
 
@@ -32,7 +34,9 @@ const App = () => (
               <Route path="products" element={<ProductsPage />} />
               <Route path="products/:id" element={<ProductDetailPage />} />
               <Route path="shops" element={<ShopsPage />} />
+              <Route path="shops/:id" element={<ShopProductsPage />} />
               <Route path="alerts" element={<AlertsPage />} />
+              <Route path="scrape" element={<ScrapePage />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>

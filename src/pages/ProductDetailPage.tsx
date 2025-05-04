@@ -39,16 +39,12 @@ import {
 import { toast } from "sonner";
 import { ArrowLeft, Bell, ExternalLink, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import { format, parseISO } from "date-fns";
+import { Line } from "react-chartjs-2";
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip as ChartTooltip, Legend } from 'chart.js';
+import { format, parseISO, subDays } from "date-fns";
+
+// Register Chart.js components
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, ChartTooltip, Legend);
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -197,11 +193,65 @@ export default function ProductDetailPage() {
     }
   }
 
-  // Format price history for chart
-  const chartData = priceHistory?.map((item) => ({
-    date: format(parseISO(item.checked_at), 'MMM dd'),
-    price: item.price,
-  })).reverse();
+  // Format price history for Chart.js
+  const chartData = {
+    labels: [],
+    datasets: [
+      {
+        label: 'Price',
+        data: [],
+        borderColor: 'rgb(59, 130, 246)',
+        backgroundColor: 'rgba(59, 130, 246, 0.5)',
+        tension: 0.1
+      }
+    ]
+  };
+
+  // Generate labels for the last 30 days (even if no data points)
+  const today = new Date();
+  const last30Days = Array.from({ length: 30 }, (_, i) => {
+    return format(subDays(today, 29 - i), 'MMM dd');
+  });
+
+  if (priceHistory && priceHistory.length > 0) {
+    // Create a map of dates to prices
+    const priceMap = new Map();
+    priceHistory.forEach(record => {
+      const date = format(parseISO(record.checked_at), 'MMM dd');
+      priceMap.set(date, record.price);
+    });
+    
+    // Fill chartData with values from the map or null for missing dates
+    chartData.labels = last30Days;
+    chartData.datasets[0].data = last30Days.map(date => priceMap.get(date) || null);
+  }
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      y: {
+        beginAtZero: false,
+        ticks: {
+          callback: function(value) {
+            return '$' + value;
+          }
+        }
+      }
+    },
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            return `$${context.parsed.y}`;
+          }
+        }
+      }
+    }
+  };
 
   if (productLoading) {
     return (
@@ -285,7 +335,16 @@ export default function ProductDetailPage() {
             <Button
               variant="outline"
               className="flex items-center gap-1"
-              onClick={handleDeleteProduct}
+              onClick={() => {
+                if (id && confirm("Are you sure you want to delete this product? This will also delete all associated price history and alerts.")) {
+                  productApi.delete(id).then(() => {
+                    toast.success("Product deleted successfully!");
+                    navigate("/products");
+                  }).catch(error => {
+                    toast.error(`Error deleting product: ${error.message}`);
+                  });
+                }
+              }}
             >
               <Trash2 className="h-4 w-4" />
               Delete
@@ -297,28 +356,15 @@ export default function ProductDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Price History</CardTitle>
+            <CardTitle>Price History (30 Days)</CardTitle>
             <CardDescription>Track how the price has changed over time</CardDescription>
           </CardHeader>
           <CardContent>
             {priceHistoryLoading ? (
               <div className="py-10 text-center">Loading price history...</div>
-            ) : chartData && chartData.length > 0 ? (
+            ) : priceHistory && priceHistory.length > 0 ? (
               <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis domain={['auto', 'auto']} />
-                    <Tooltip formatter={(value: any) => [`$${value}`, 'Price']} />
-                    <Line
-                      type="monotone"
-                      dataKey="price"
-                      stroke="#3b82f6"
-                      strokeWidth={2}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                <Line data={chartData} options={chartOptions} />
               </div>
             ) : (
               <div className="py-10 text-center">
