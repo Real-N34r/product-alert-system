@@ -9,7 +9,129 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      alerts: {
+        Row: {
+          created_at: string
+          direction: string
+          id: string
+          product_id: string
+          threshold: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          direction: string
+          id?: string
+          product_id: string
+          threshold: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          direction?: string
+          id?: string
+          product_id?: string
+          threshold?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alerts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      price_history: {
+        Row: {
+          checked_at: string
+          id: string
+          price: number
+          product_id: string
+        }
+        Insert: {
+          checked_at?: string
+          id?: string
+          price: number
+          product_id: string
+        }
+        Update: {
+          checked_at?: string
+          id?: string
+          price?: number
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          created_at: string
+          current_price: number
+          id: string
+          name: string
+          shop_id: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          current_price: number
+          id?: string
+          name: string
+          shop_id: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          current_price?: number
+          id?: string
+          name?: string
+          shop_id?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shops: {
+        Row: {
+          base_url: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          base_url: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          base_url?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
