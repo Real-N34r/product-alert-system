@@ -4,6 +4,7 @@ export interface Shop {
   name: string;
   base_url: string;
   created_at: string;
+  user_id?: string;
 }
 
 export interface Product {

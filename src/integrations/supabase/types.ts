@@ -117,18 +117,21 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          user_id: string | null
         }
         Insert: {
           base_url: string
           created_at?: string
           id?: string
           name: string
+          user_id?: string | null
         }
         Update: {
           base_url?: string
           created_at?: string
           id?: string
           name?: string
+          user_id?: string | null
         }
         Relationships: []
       }

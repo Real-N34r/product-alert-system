@@ -1,12 +1,13 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { shopApi } from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 import {
   Card,
   CardContent,
@@ -27,6 +28,8 @@ export default function ShopsPage() {
   const [isAddShopDialogOpen, setIsAddShopDialogOpen] = useState(false);
   const [newShop, setNewShop] = useState({ name: '', base_url: '' });
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
   const { data: shops, isLoading } = useQuery({
     queryKey: ['shops'],
@@ -42,12 +45,24 @@ export default function ShopsPage() {
       toast.success('Shop added successfully!');
     },
     onError: (error: any) => {
-      toast.error(`Error creating shop: ${error.message}`);
+      console.error("Shop creation error:", error);
+      if (error.message.includes("Must be logged in")) {
+        toast.error('You must be logged in to add a shop');
+        navigate('/auth');
+      } else {
+        toast.error(`Error creating shop: ${error.message}`);
+      }
     }
   });
 
   const handleAddShop = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user) {
+      toast.error('You must be logged in to add a shop');
+      navigate('/auth');
+      return;
+    }
     
     // Ensure base_url has http/https prefix
     let formattedBaseUrl = newShop.base_url;

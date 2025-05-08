@@ -21,9 +21,14 @@ export const shopApi = {
   },
   
   create: async (shop: Omit<Shop, 'id' | 'created_at'>): Promise<Shop> => {
+    // Get the current user's ID
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) throw new Error("Must be logged in to create a shop");
+    
     const { data, error } = await supabase
       .from('shops')
-      .insert([shop])
+      .insert([{ ...shop, user_id: user.id }])
       .select()
       .single();
     if (error) throw error;
