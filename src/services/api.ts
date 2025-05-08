@@ -85,6 +85,11 @@ export const productApi = {
   },
   
   create: async (product: Omit<Product, 'id' | 'created_at' | 'updated_at' | 'shop'>): Promise<Product> => {
+    // Check if user is authenticated
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) throw new Error("Must be logged in to create a product");
+    
     const { data, error } = await supabase
       .from('products')
       .insert([product])

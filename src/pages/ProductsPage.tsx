@@ -32,10 +32,13 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function ProductsPage() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newProduct, setNewProduct] = useState({
     name: "",
@@ -66,12 +69,25 @@ export default function ProductsPage() {
       toast.success("Product created successfully!");
     },
     onError: (error: any) => {
-      toast.error(`Error creating product: ${error.message}`);
+      console.error("Product creation error:", error);
+      if (error.message.includes("Must be logged in")) {
+        toast.error("You must be logged in to create a product");
+        navigate('/auth');
+      } else {
+        toast.error(`Error creating product: ${error.message}`);
+      }
     }
   });
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user) {
+      toast.error("You must be logged in to create a product");
+      navigate('/auth');
+      return;
+    }
+    
     if (!newProduct.shop_id) {
       toast.error("Please select a shop");
       return;
