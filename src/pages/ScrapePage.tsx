@@ -58,18 +58,25 @@ export default function ScrapePage() {
     setResult(null);
 
     try {
+      console.log("Scraping with mode:", scrapeMode);
+      console.log("Selected category:", selectedCategory);
+      
       const body = scrapeMode === "category" && selectedCategory
         ? { site: selectedSite, categorySlug: selectedCategory }
         : { site: selectedSite };
+      
+      console.log("Sending scrape request with body:", body);
       
       const { data, error } = await supabase.functions.invoke("scrape-products", {
         body,
       });
 
       if (error) {
+        console.error("Scrape function error:", error);
         throw error;
       }
 
+      console.log("Scrape result:", data);
       setResult(data);
       
       if (data.success) {

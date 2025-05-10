@@ -33,11 +33,19 @@ export const categoryApi = {
   },
   
   getProductsByCategory: async (categorySlug: string): Promise<Product[]> => {
+    console.log("Fetching products for category slug:", categorySlug);
+    
     const { data, error } = await supabase
       .from('products')
       .select('*, shop:shops(*)')
       .eq('category', categorySlug);
-    if (error) throw error;
+      
+    if (error) {
+      console.error("Error fetching category products:", error);
+      throw error;
+    }
+    
+    console.log("Products found:", data?.length || 0);
     return data as Product[];
   }
 };

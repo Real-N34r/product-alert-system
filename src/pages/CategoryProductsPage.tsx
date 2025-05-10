@@ -20,6 +20,7 @@ import {
   DialogTrigger,
   DialogFooter,
   DialogClose,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -61,7 +62,10 @@ export default function CategoryProductsPage() {
   
   const { data: products, isLoading: productsLoading } = useQuery({
     queryKey: ['category-products', slug],
-    queryFn: () => categoryApi.getProductsByCategory(slug || ''),
+    queryFn: () => {
+      console.log("Fetching products for slug:", slug);
+      return categoryApi.getProductsByCategory(slug || '');
+    },
     enabled: !!slug,
   });
   
@@ -155,6 +159,9 @@ export default function CategoryProductsPage() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Create Price Alert for {category.name}</DialogTitle>
+              <DialogDescription>
+                You'll be notified when prices in this category change according to your settings.
+              </DialogDescription>
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
@@ -274,6 +281,9 @@ export default function CategoryProductsPage() {
           <p className="text-sm text-muted-foreground mb-4">
             Products will appear here when they are scraped from supported stores.
           </p>
+          <Button asChild variant="outline">
+            <Link to="/scrape">Go to Scrape Page</Link>
+          </Button>
         </div>
       )}
     </div>
