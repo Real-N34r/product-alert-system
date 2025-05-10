@@ -105,7 +105,7 @@ export default function AlertsPage() {
                         <TableCell>${alert.threshold.toFixed(2)}</TableCell>
                         <TableCell>
                           {alert.direction === "down" ? (
-                            <Badge variant="success" className="bg-green-500">Below (price drops)</Badge>
+                            <Badge variant="secondary" className="bg-green-500 text-white hover:bg-green-600">Below (price drops)</Badge>
                           ) : (
                             <Badge variant="destructive">Above (price increases)</Badge>
                           )}
@@ -163,7 +163,7 @@ export default function AlertsPage() {
                         <TableCell>${alert.threshold.toFixed(2)}</TableCell>
                         <TableCell>
                           {alert.direction === "down" ? (
-                            <Badge variant="success" className="bg-green-500">Below (price drops)</Badge>
+                            <Badge variant="secondary" className="bg-green-500 text-white hover:bg-green-600">Below (price drops)</Badge>
                           ) : (
                             <Badge variant="destructive">Above (price increases)</Badge>
                           )}

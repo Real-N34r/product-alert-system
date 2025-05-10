@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { categoryApi, alertApi } from "@/services/api";
@@ -45,6 +44,8 @@ const alertFormSchema = z.object({
   }),
 });
 
+type AlertFormValues = z.infer<typeof alertFormSchema>;
+
 export default function CategoryProductsPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -64,7 +65,7 @@ export default function CategoryProductsPage() {
     enabled: !!slug,
   });
   
-  const form = useForm({
+  const form = useForm<AlertFormValues>({
     resolver: zodResolver(alertFormSchema),
     defaultValues: {
       threshold: "",
@@ -73,7 +74,7 @@ export default function CategoryProductsPage() {
   });
   
   const createCategoryAlertMutation = useMutation({
-    mutationFn: (values: z.infer<typeof alertFormSchema>) => {
+    mutationFn: (values: AlertFormValues) => {
       if (!category) throw new Error("Category not found");
       
       return alertApi.create({
@@ -99,7 +100,7 @@ export default function CategoryProductsPage() {
     }
   });
   
-  const onSubmit = (values: z.infer<typeof alertFormSchema>) => {
+  const onSubmit = (values: AlertFormValues) => {
     if (!user) {
       toast.error("You must be logged in to create an alert");
       navigate('/auth');
