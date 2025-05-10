@@ -24,7 +24,7 @@ const SUPPORTED_SITES = {
       '/component/graphics-card',
     ],
     categoryMapping: {
-      'laptop': '/component/laptop',
+      'laptop': '/laptop-notebook',
       'cpu': '/component/processor',
       'graphics-card': '/component/graphics-card',
       'ram': '/component/ram',
