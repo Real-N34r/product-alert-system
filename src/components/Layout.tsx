@@ -12,7 +12,8 @@ import {
   LogOut,
   LogIn,
   Menu,
-  X 
+  X,
+  Layers 
 } from "lucide-react";
 
 export default function Layout() {
@@ -56,6 +57,10 @@ export default function Layout() {
             <Link to="/products" className="text-sm font-medium hover:underline flex items-center gap-1">
               <ShoppingBag className="h-4 w-4" />
               Products
+            </Link>
+            <Link to="/categories" className="text-sm font-medium hover:underline flex items-center gap-1">
+              <Layers className="h-4 w-4" />
+              Categories
             </Link>
             <Link to="/shops" className="text-sm font-medium hover:underline flex items-center gap-1">
               <Store className="h-4 w-4" />
@@ -102,6 +107,14 @@ export default function Layout() {
               >
                 <ShoppingBag className="h-4 w-4" />
                 Products
+              </Link>
+              <Link 
+                to="/categories" 
+                className="block px-2 py-2 text-sm font-medium hover:bg-gray-100 rounded-md flex items-center gap-2"
+                onClick={closeMobileMenu}
+              >
+                <Layers className="h-4 w-4" />
+                Categories
               </Link>
               <Link 
                 to="/shops" 

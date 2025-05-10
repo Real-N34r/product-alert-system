@@ -11,30 +11,40 @@ export type Database = {
     Tables: {
       alerts: {
         Row: {
+          category_id: string | null
           created_at: string
           direction: string
           id: string
-          product_id: string
+          product_id: string | null
           threshold: number
           user_id: string
         }
         Insert: {
+          category_id?: string | null
           created_at?: string
           direction: string
           id?: string
-          product_id: string
+          product_id?: string | null
           threshold: number
           user_id: string
         }
         Update: {
+          category_id?: string | null
           created_at?: string
           direction?: string
           id?: string
-          product_id?: string
+          product_id?: string | null
           threshold?: number
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "alerts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "product_categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "alerts_product_id_fkey"
             columns: ["product_id"]
@@ -73,8 +83,30 @@ export type Database = {
           },
         ]
       }
+      product_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
+          category: string | null
           created_at: string
           current_price: number
           id: string
@@ -84,6 +116,7 @@ export type Database = {
           url: string
         }
         Insert: {
+          category?: string | null
           created_at?: string
           current_price: number
           id?: string
@@ -93,6 +126,7 @@ export type Database = {
           url: string
         }
         Update: {
+          category?: string | null
           created_at?: string
           current_price?: number
           id?: string

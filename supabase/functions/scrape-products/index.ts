@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.43.0";
 import * as cheerio from "https://esm.sh/cheerio@1.0.0-rc.12";
@@ -23,6 +22,18 @@ const SUPPORTED_SITES = {
       '/computer-components/processor',
       '/computer-components/graphics-card',
     ],
+    categoryMapping: {
+      'laptop': '/laptop-notebook/laptop',
+      'cpu': '/computer-components/processor',
+      'graphics-card': '/computer-components/graphics-card',
+      'ram': '/computer-components/ram-memory',
+      'motherboard': '/computer-components/motherboard',
+      'storage': '/computer-components/hard-disk-drive',
+      'power-supply': '/computer-components/power-supply',
+      'case': '/computer-components/casing',
+      'cooling': '/computer-components/cooling',
+      'monitor': '/monitor-projector/monitor',
+    }
   },
   'ryans.com': {
     name: 'Ryans',
@@ -36,6 +47,18 @@ const SUPPORTED_SITES = {
       '/category/processor-all-196',
       '/category/graphics-card-all-106',
     ],
+    categoryMapping: {
+      'laptop': '/category/laptop-all-71',
+      'cpu': '/category/processor-all-196',
+      'graphics-card': '/category/graphics-card-all-106',
+      'ram': '/category/ram-all-197',
+      'motherboard': '/category/motherboard-all-195',
+      'storage': '/category/hard-disk-all-198',
+      'power-supply': '/category/power-supply-all-199',
+      'case': '/category/casing-all-194',
+      'cooling': '/category/cooling-device-all-201',
+      'monitor': '/category/monitor-all-85',
+    }
   },
   'techlandbd.com': {
     name: 'TechLand',
@@ -49,6 +72,18 @@ const SUPPORTED_SITES = {
       '/computer-components/processor',
       '/computer-components/graphics-card',
     ],
+    categoryMapping: {
+      'laptop': '/computers/laptops',
+      'cpu': '/computer-components/processor',
+      'graphics-card': '/computer-components/graphics-card',
+      'ram': '/computer-components/ram-memory',
+      'motherboard': '/computer-components/motherboard',
+      'storage': '/computer-components/storage-devices',
+      'power-supply': '/computer-components/power-supply',
+      'case': '/computer-components/casing',
+      'cooling': '/computer-components/cooling-solutions',
+      'monitor': '/monitors',
+    }
   },
   'ultratech.com.bd': {
     name: 'Ultra Tech',
@@ -62,6 +97,18 @@ const SUPPORTED_SITES = {
       '/product-category/processor',
       '/product-category/graphics-card',
     ],
+    categoryMapping: {
+      'laptop': '/product-category/laptop',
+      'cpu': '/product-category/processor',
+      'graphics-card': '/product-category/graphics-card',
+      'ram': '/product-category/ram',
+      'motherboard': '/product-category/motherboard',
+      'storage': '/product-category/storage',
+      'power-supply': '/product-category/power-supply',
+      'case': '/product-category/casing',
+      'cooling': '/product-category/cooling',
+      'monitor': '/product-category/monitor',
+    }
   },
   'binarylogic.com.bd': {
     name: 'Binary Logic',
@@ -75,6 +122,18 @@ const SUPPORTED_SITES = {
       '/processor',
       '/graphics-card',
     ],
+    categoryMapping: {
+      'laptop': '/laptop',
+      'cpu': '/processor',
+      'graphics-card': '/graphics-card',
+      'ram': '/ram',
+      'motherboard': '/motherboard',
+      'storage': '/storage',
+      'power-supply': '/power-supply',
+      'case': '/casing',
+      'cooling': '/cooling',
+      'monitor': '/monitor',
+    }
   },
   'skyland.com.bd': {
     name: 'Skyland',
@@ -88,6 +147,18 @@ const SUPPORTED_SITES = {
       '/processor',
       '/graphics-card',
     ],
+    categoryMapping: {
+      'laptop': '/laptop',
+      'cpu': '/processor',
+      'graphics-card': '/graphics-card',
+      'ram': '/ram',
+      'motherboard': '/motherboard',
+      'storage': '/storage',
+      'power-supply': '/power-supply',
+      'case': '/casing',
+      'cooling': '/cooling',
+      'monitor': '/monitor',
+    }
   },
 };
 
@@ -156,7 +227,7 @@ async function scrapeProducts(site, categoryPath) {
 }
 
 // Function to save products to the database
-async function saveProducts(supabase, products, shopName) {
+async function saveProducts(supabase, products, shopName, category = null) {
   try {
     // First, get or create the shop
     let { data: shop, error: shopError } = await supabase
@@ -185,6 +256,12 @@ async function saveProducts(supabase, products, shopName) {
 
     // Insert or update products
     for (const product of products) {
+      // Set the category if provided
+      const productData = {
+        ...product,
+        category: category
+      };
+      
       // Check if product with similar name and url exists
       const { data: existingProducts, error: findError } = await supabase
         .from('products')
@@ -204,14 +281,23 @@ async function saveProducts(supabase, products, shopName) {
         const existingProduct = existingProducts[0];
         productId = existingProduct.id;
         
-        // Only update if price changed
-        if (existingProduct.current_price !== product.current_price) {
+        // Only update if price changed or adding a category
+        if (existingProduct.current_price !== product.current_price || 
+            (category && !existingProduct.category)) {
+          
+          const updateData: any = { 
+            current_price: product.current_price,
+            updated_at: new Date().toISOString()
+          };
+          
+          // Add category if it's provided and not already set
+          if (category && !existingProduct.category) {
+            updateData.category = category;
+          }
+          
           const { error: updateError } = await supabase
             .from('products')
-            .update({ 
-              current_price: product.current_price,
-              updated_at: new Date().toISOString()
-            })
+            .update(updateData)
             .eq('id', existingProduct.id);
             
           if (updateError) {
@@ -236,6 +322,7 @@ async function saveProducts(supabase, products, shopName) {
             url: product.url,
             current_price: product.current_price,
             shop_id: shop.id,
+            category: category
           }])
           .select()
           .single();
@@ -264,6 +351,132 @@ async function saveProducts(supabase, products, shopName) {
   }
 }
 
+// Function to check if any products have dropped in price and notify users
+async function checkPriceAlerts(supabase) {
+  try {
+    // Get all price drops from the last 24 hours
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    const { data: priceDrops, error: priceDropsError } = await supabase
+      .from('price_history')
+      .select(`
+        product_id,
+        price,
+        checked_at,
+        product:products(
+          id,
+          name,
+          current_price,
+          category
+        )
+      `)
+      .gt('checked_at', yesterday.toISOString())
+      .order('checked_at', { ascending: false });
+      
+    if (priceDropsError) throw priceDropsError;
+    
+    const processedProducts = new Set();
+    const categoryPriceDrops = new Map();
+    
+    // Process price drops by product
+    for (const drop of priceDrops) {
+      const productId = drop.product_id;
+      
+      // Skip if we've already processed this product
+      if (processedProducts.has(productId)) continue;
+      processedProducts.add(productId);
+      
+      // Get previous price for this product
+      const { data: previousPrices, error: previousPricesError } = await supabase
+        .from('price_history')
+        .select('price')
+        .eq('product_id', productId)
+        .lt('checked_at', drop.checked_at)
+        .order('checked_at', { ascending: false })
+        .limit(1);
+        
+      if (previousPricesError || !previousPrices?.length) continue;
+      
+      const currentPrice = drop.product.current_price;
+      const previousPrice = previousPrices[0].price;
+      
+      // Check if price has decreased
+      if (currentPrice < previousPrice) {
+        // Track category price drops for category-based alerts
+        if (drop.product.category) {
+          if (!categoryPriceDrops.has(drop.product.category)) {
+            categoryPriceDrops.set(drop.product.category, []);
+          }
+          categoryPriceDrops.get(drop.product.category).push({
+            productId,
+            productName: drop.product.name,
+            currentPrice,
+            previousPrice,
+            priceDrop: previousPrice - currentPrice
+          });
+        }
+        
+        // Find alerts for specific products
+        const { data: productAlerts, error: productAlertsError } = await supabase
+          .from('alerts')
+          .select('id, user_id, threshold, direction')
+          .eq('product_id', productId);
+          
+        if (productAlertsError) continue;
+        
+        // Process product-specific alerts
+        for (const alert of productAlerts) {
+          // Check if price threshold is met
+          if (alert.direction === 'down' && currentPrice <= alert.threshold) {
+            // Here you would send a notification to the user
+            console.log(`Alert triggered for user ${alert.user_id} - Product ${drop.product.name} price dropped to ${currentPrice}`);
+          }
+        }
+      }
+    }
+    
+    // Process category-based alerts
+    for (const [category, drops] of categoryPriceDrops.entries()) {
+      if (drops.length === 0) continue;
+      
+      // Find alerts for this category
+      const { data: categoryAlerts, error: categoryAlertsError } = await supabase
+        .from('alerts')
+        .select(`
+          id, 
+          user_id, 
+          threshold, 
+          direction,
+          category:product_categories!category_id(name)
+        `)
+        .eq('category_id', category);
+        
+      if (categoryAlertsError) continue;
+      
+      // Process each category alert
+      for (const alert of categoryAlerts) {
+        // Find the biggest price drop in this category
+        const biggestDrop = drops.sort((a, b) => b.priceDrop - a.priceDrop)[0];
+        
+        // Check if any product's price threshold is met
+        const matchingDrops = drops.filter(drop => 
+          alert.direction === 'down' && drop.currentPrice <= alert.threshold);
+          
+        if (matchingDrops.length > 0) {
+          // Here you would send a notification to the user
+          console.log(`Category Alert triggered for user ${alert.user_id} - ${matchingDrops.length} products in ${category} category dropped below ${alert.threshold}`);
+        }
+      }
+    }
+    
+    return { success: true, message: "Price alerts checked successfully" };
+  } catch (error) {
+    console.error(`Error checking price alerts: ${error}`);
+    return { success: false, error: error.message };
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -277,7 +490,7 @@ serve(async (req) => {
       { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
     );
 
-    const { site, categoryPath } = await req.json();
+    const { site, categorySlug, categoryPath } = await req.json();
     
     if (!site || !SUPPORTED_SITES[site]) {
       return new Response(
@@ -287,18 +500,36 @@ serve(async (req) => {
     }
 
     const siteConfig = SUPPORTED_SITES[site];
-    const paths = categoryPath ? [categoryPath] : siteConfig.categoryPaths;
+    let paths = [];
+    
+    // If a specific category slug is provided (e.g. 'ram', 'cpu'), use its mapped path
+    if (categorySlug && siteConfig.categoryMapping && siteConfig.categoryMapping[categorySlug]) {
+      paths = [siteConfig.categoryMapping[categorySlug]];
+    } 
+    // If a specific category path is provided, use it
+    else if (categoryPath) {
+      paths = [categoryPath];
+    } 
+    // Otherwise, use the default category paths
+    else {
+      paths = siteConfig.categoryPaths;
+    }
     
     const results = [];
     for (const path of paths) {
+      const category = categorySlug || null; // Use the category slug if provided
       const products = await scrapeProducts(site, path);
+      
       if (products.length > 0) {
-        const saveResult = await saveProducts(supabaseClient, products, siteConfig.name);
-        results.push({ path, ...saveResult });
+        const saveResult = await saveProducts(supabaseClient, products, siteConfig.name, category);
+        results.push({ path, category, ...saveResult });
       } else {
-        results.push({ path, success: false, error: 'No products found' });
+        results.push({ path, category, success: false, error: 'No products found' });
       }
     }
+    
+    // Check for price alerts after scraping
+    await checkPriceAlerts(supabaseClient);
 
     return new Response(
       JSON.stringify({ success: true, results }),

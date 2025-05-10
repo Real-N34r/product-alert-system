@@ -1,6 +1,5 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { Shop, Product, PriceHistory, Alert } from "@/types/database";
+import { Shop, Product, PriceHistory, Alert, ProductCategory } from "@/types/database";
 
 // Shop API
 export const shopApi = {
@@ -150,6 +149,47 @@ export const priceHistoryApi = {
   }
 };
 
+// ProductCategory API
+export const categoryApi = {
+  getAll: async (): Promise<ProductCategory[]> => {
+    const { data, error } = await supabase
+      .from('product_categories')
+      .select('*')
+      .order('name');
+    if (error) throw error;
+    return data as ProductCategory[];
+  },
+  
+  getById: async (id: string): Promise<ProductCategory> => {
+    const { data, error } = await supabase
+      .from('product_categories')
+      .select('*')
+      .eq('id', id)
+      .single();
+    if (error) throw error;
+    return data as ProductCategory;
+  },
+  
+  getBySlug: async (slug: string): Promise<ProductCategory> => {
+    const { data, error } = await supabase
+      .from('product_categories')
+      .select('*')
+      .eq('slug', slug)
+      .single();
+    if (error) throw error;
+    return data as ProductCategory;
+  },
+  
+  getProductsByCategory: async (categorySlug: string): Promise<Product[]> => {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*, shop:shops(*)')
+      .eq('category', categorySlug);
+    if (error) throw error;
+    return data as Product[];
+  }
+};
+
 // Alert API
 export const alertApi = {
   getUserAlerts: async (): Promise<Alert[]> => {
@@ -170,6 +210,15 @@ export const alertApi = {
     return data as Alert[];
   },
   
+  getByCategoryId: async (categoryId: string): Promise<Alert[]> => {
+    const { data, error } = await supabase
+      .from('alerts')
+      .select('*')
+      .eq('category_id', categoryId);
+    if (error) throw error;
+    return data as Alert[];
+  },
+  
   create: async (alert: Omit<Alert, 'id' | 'user_id' | 'created_at' | 'product'>): Promise<Alert> => {
     // Get the current user's ID
     const {
@@ -177,6 +226,11 @@ export const alertApi = {
     } = await supabase.auth.getUser();
     
     if (!user) throw new Error('User must be authenticated to create an alert');
+    
+    // Validate that either product_id or category_id is provided, but not both
+    if ((!alert.product_id && !alert.category_id) || (alert.product_id && alert.category_id)) {
+      throw new Error('Must specify either a product_id or category_id, but not both');
+    }
     
     const newAlert = {
       ...alert,

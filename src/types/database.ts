@@ -7,6 +7,13 @@ export interface Shop {
   user_id?: string;
 }
 
+export interface ProductCategory {
+  id: string;
+  name: string;
+  slug: string;
+  created_at: string;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -15,6 +22,7 @@ export interface Product {
   url: string;
   created_at: string;
   updated_at: string;
+  category?: string;
   shop?: Shop; // For joined queries
 }
 
@@ -29,7 +37,8 @@ export interface PriceHistory {
 export interface Alert {
   id: string;
   user_id: string;
-  product_id: string;
+  product_id?: string;
+  category_id?: string;
   threshold: number;
   direction: 'up' | 'down';
   created_at: string;

@@ -1,6 +1,8 @@
 
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { categoryApi } from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
@@ -17,6 +19,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const SUPPORTED_SITES = [
   { id: "startech.com.bd", name: "Star Tech" },
@@ -29,8 +38,15 @@ const SUPPORTED_SITES = [
 
 export default function ScrapePage() {
   const [selectedSite, setSelectedSite] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [scrapeMode, setScrapeMode] = useState<"general" | "category">("general");
+  
+  const { data: categories } = useQuery({
+    queryKey: ['categories'],
+    queryFn: categoryApi.getAll
+  });
 
   const handleScrape = async () => {
     if (!selectedSite) {
@@ -42,8 +58,12 @@ export default function ScrapePage() {
     setResult(null);
 
     try {
+      const body = scrapeMode === "category" && selectedCategory
+        ? { site: selectedSite, categorySlug: selectedCategory }
+        : { site: selectedSite };
+      
       const { data, error } = await supabase.functions.invoke("scrape-products", {
-        body: { site: selectedSite },
+        body,
       });
 
       if (error) {
@@ -85,25 +105,73 @@ export default function ScrapePage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="w-full md:w-1/2">
-              <Select value={selectedSite} onValueChange={setSelectedSite}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a site to scrape" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SUPPORTED_SITES.map((site) => (
-                    <SelectItem key={site.id} value={site.id}>
-                      {site.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button onClick={handleScrape} disabled={isLoading || !selectedSite}>
-              {isLoading ? "Scraping..." : "Start Scraping"}
-            </Button>
-          </div>
+          <Tabs defaultValue="general" onValueChange={(value) => setScrapeMode(value as "general" | "category")}>
+            <TabsList className="mb-4">
+              <TabsTrigger value="general">General Scrape</TabsTrigger>
+              <TabsTrigger value="category">By Category</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="general">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="w-full md:w-1/2">
+                  <Select value={selectedSite} onValueChange={setSelectedSite}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a site to scrape" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SUPPORTED_SITES.map((site) => (
+                        <SelectItem key={site.id} value={site.id}>
+                          {site.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button onClick={handleScrape} disabled={isLoading || !selectedSite}>
+                  {isLoading ? "Scraping..." : "Start Scraping"}
+                </Button>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="category">
+              <div className="flex flex-col gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Select value={selectedSite} onValueChange={setSelectedSite}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a site to scrape" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SUPPORTED_SITES.map((site) => (
+                        <SelectItem key={site.id} value={site.id}>
+                          {site.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories?.map((category) => (
+                        <SelectItem key={category.id} value={category.slug}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <Button 
+                  onClick={handleScrape} 
+                  disabled={isLoading || !selectedSite || !selectedCategory}
+                >
+                  {isLoading ? "Scraping..." : "Scrape Category Products"}
+                </Button>
+              </div>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
       
@@ -128,9 +196,16 @@ export default function ScrapePage() {
                 <p className="mb-4 text-green-600 font-medium">
                   Successfully scraped products
                 </p>
-                <div className="border rounded-md p-4 bg-gray-50 dark:bg-gray-900 overflow-auto max-h-[400px]">
-                  <pre>{JSON.stringify(result, null, 2)}</pre>
-                </div>
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="results">
+                    <AccordionTrigger>View detailed results</AccordionTrigger>
+                    <AccordionContent>
+                      <div className="border rounded-md p-4 bg-gray-50 dark:bg-gray-900 overflow-auto max-h-[400px]">
+                        <pre>{JSON.stringify(result, null, 2)}</pre>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               </div>
             ) : (
               <div>
