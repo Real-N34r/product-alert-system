@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.43.0";
 import * as cheerio from "https://esm.sh/cheerio@1.0.0-rc.12";
@@ -18,21 +19,21 @@ const SUPPORTED_SITES = {
     priceSelector: '.p-item-price',
     urlSelector: 'a',
     categoryPaths: [
-      '/laptop-notebook/laptop',
-      '/computer-components/processor',
-      '/computer-components/graphics-card',
+      '/component/laptop',
+      '/component/processor',
+      '/component/graphics-card',
     ],
     categoryMapping: {
-      'laptop': '/laptop-notebook/laptop',
-      'cpu': '/computer-components/processor',
-      'graphics-card': '/computer-components/graphics-card',
-      'ram': '/computer-components/ram-memory',
-      'motherboard': '/computer-components/motherboard',
-      'storage': '/computer-components/hard-disk-drive',
-      'power-supply': '/computer-components/power-supply',
-      'case': '/computer-components/casing',
-      'cooling': '/computer-components/cooling',
-      'monitor': '/monitor-projector/monitor',
+      'laptop': '/component/laptop',
+      'cpu': '/component/processor',
+      'graphics-card': '/component/graphics-card',
+      'ram': '/component/ram',
+      'motherboard': '/component/motherboard',
+      'storage': '/component/hard-disk-drive',
+      'power-supply': '/component/power-supply',
+      'case': '/component/casing',
+      'cooling': '/component/cpu-cooler',
+      'monitor': '/monitor',
     }
   },
   'ryans.com': {
